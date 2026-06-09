@@ -18,6 +18,7 @@ import { accessKeysRoutes } from "./routes/accessKeysRoutes";
 import { enableMonitoring } from "./utils/enableMonitoring";
 import { enableErrorHandlers } from "./utils/enableErrorHandlers";
 import { enableAuthentication } from "./utils/enableAuthentication";
+import { enableRateLimit } from "./utils/enableRateLimit";
 import { userRoutes } from "./routes/userRoutes";
 import { feedRoutes } from "./routes/feedRoutes";
 import { kvRoutes } from "./routes/kvRoutes";
@@ -75,6 +76,7 @@ export async function startApi(opts: StartApiOptions = {}) {
     enableMonitoring(typed);
     enableErrorHandlers(typed, { skipNotFoundHandler: !!opts.staticDir });
     enableAuthentication(typed);
+    await enableRateLimit(typed);
 
     // Serve local files when using local storage
     if (isLocalStorage()) {
