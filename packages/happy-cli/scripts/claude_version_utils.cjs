@@ -3,13 +3,11 @@
  * Used by both local and remote launchers
  *
  * Supports multiple installation methods:
- * 1. npm global: npm install -g @anthropic-ai/claude-code
- * 2. Homebrew: brew install claude-code
- * 3. Native installer:
- *    - macOS/Linux: curl -fsSL https://claude.ai/install.sh | bash
- *    - PowerShell:  irm https://claude.ai/install.ps1 | iex
- *    - Windows CMD: curl -fsSL https://claude.ai/install.cmd | cmd
- * 4. PATH fallback: bun, pnpm, or any other package manager
+ * 1. Native installer (recommended): curl -fsSL https://claude.ai/install.sh | bash
+ * 2. Homebrew: brew install --cask claude-code
+ * 3. npm global: npm install -g @anthropic-ai/claude-code
+ * 4. WinGet: winget install Anthropic.ClaudeCode
+ * 5. PATH fallback: bun, pnpm, or any other package manager
  */
 
 const { execSync } = require('child_process');
@@ -300,88 +298,31 @@ function findHomebrewCliPath() {
 
 /**
  * Find path to native installer Claude Code CLI
- * 
- * Installation locations:
- * - macOS/Linux: ~/.local/bin/claude (symlink) -> ~/.local/share/claude/versions/<version>
- * - Windows: %LOCALAPPDATA%\Claude\ or %USERPROFILE%\.claude\
- * - Legacy: ~/.claude/local/
- * 
- * @returns {string|null} Path to cli.js or binary, or null if not found
+ *
+ * Installation locations per official docs (https://code.claude.com/docs/en/setup):
+ * - macOS/Linux/WSL: ~/.local/bin/claude  (binary/symlink)
+ *                    ~/.local/share/claude/ (version storage)
+ * - Windows:         %USERPROFILE%\.local\bin\claude.exe
+ *                    %USERPROFILE%\.local\share\claude\
+ *
+ * @returns {string|null} Path to binary, or null if not found
  */
 function findNativeInstallerCliPath() {
     const homeDir = os.homedir();
-    
-    // Windows-specific locations
-    if (process.platform === 'win32') {
-        const localAppData = process.env.LOCALAPPDATA || path.join(homeDir, 'AppData', 'Local');
-        
-        // Check %LOCALAPPDATA%\Claude\
-        const windowsClaudePath = path.join(localAppData, 'Claude');
-        if (fs.existsSync(windowsClaudePath)) {
-            // Check for versions directory
-            const versionsDir = path.join(windowsClaudePath, 'versions');
-            if (fs.existsSync(versionsDir)) {
-                const found = findLatestVersionBinary(versionsDir);
-                if (found) return found;
-            }
-            
-            // Check for claude.exe directly
-            const exePath = path.join(windowsClaudePath, 'claude.exe');
-            if (fs.existsSync(exePath)) {
-                return exePath;
-            }
-            
-            // Check for cli.js
-            const cliPath = path.join(windowsClaudePath, 'cli.js');
-            if (fs.existsSync(cliPath)) {
-                return cliPath;
-            }
-        }
-        
-        // Check %USERPROFILE%\.claude\ (alternative Windows location)
-        const dotClaudePath = path.join(homeDir, '.claude');
-        if (fs.existsSync(dotClaudePath)) {
-            const versionsDir = path.join(dotClaudePath, 'versions');
-            if (fs.existsSync(versionsDir)) {
-                const found = findLatestVersionBinary(versionsDir);
-                if (found) return found;
-            }
-            
-            const exePath = path.join(dotClaudePath, 'claude.exe');
-            if (fs.existsSync(exePath)) {
-                return exePath;
-            }
-        }
-    }
-    
-    // Check ~/.local/bin/claude symlink (most common location on macOS/Linux)
-    const localBinPath = path.join(homeDir, '.local', 'bin', 'claude');
+
+    // ~/.local/bin/claude — primary location on all platforms (macOS, Linux, WSL, Windows)
+    const ext = process.platform === 'win32' ? '.exe' : '';
+    const localBinPath = path.join(homeDir, '.local', 'bin', `claude${ext}`);
     const resolvedLocalBinPath = resolvePathSafe(localBinPath);
     if (resolvedLocalBinPath) return resolvedLocalBinPath;
-    
-    // Check ~/.local/share/claude/versions/ (native installer location)
+
+    // ~/.local/share/claude/ — version storage directory
     const versionsDir = path.join(homeDir, '.local', 'share', 'claude', 'versions');
     if (fs.existsSync(versionsDir)) {
         const found = findLatestVersionBinary(versionsDir);
         if (found) return found;
     }
-    
-    // Check ~/.claude/local/ (older installation method)
-    const nativeBasePath = path.join(homeDir, '.claude', 'local');
-    if (fs.existsSync(nativeBasePath)) {
-        // Look for the cli.js in the node_modules structure
-        const cliPath = path.join(nativeBasePath, 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
-        if (fs.existsSync(cliPath)) {
-            return cliPath;
-        }
-        
-        // Alternative: direct cli.js in the installation
-        const directCliPath = path.join(nativeBasePath, 'cli.js');
-        if (fs.existsSync(directCliPath)) {
-            return directCliPath;
-        }
-    }
-    
+
     return null;
 }
 
@@ -505,15 +446,16 @@ function getClaudeCliPath() {
     if (!result) {
         console.error('\n\x1b[1m\x1b[33mClaude Code is not installed\x1b[0m\n');
         console.error('Please install Claude Code using one of these methods:\n');
-        console.error('\x1b[1mOption 1 - npm (recommended, highest priority):\x1b[0m');
-        console.error('  \x1b[36mnpm install -g @anthropic-ai/claude-code\x1b[0m\n');
+        console.error('\x1b[1mOption 1 - Native installer (recommended):\x1b[0m');
+        console.error('  \x1b[90mmacOS/Linux/WSL:\x1b[0m  \x1b[36mcurl -fsSL https://claude.ai/install.sh | bash\x1b[0m');
+        console.error('  \x1b[90mPowerShell:\x1b[0m       \x1b[36mirm https://claude.ai/install.ps1 | iex\x1b[0m');
+        console.error('  \x1b[90mWindows CMD:\x1b[0m      \x1b[36mcurl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd\x1b[0m\n');
         console.error('\x1b[1mOption 2 - Homebrew (macOS/Linux):\x1b[0m');
-        console.error('  \x1b[36mbrew install claude-code\x1b[0m\n');
-        console.error('\x1b[1mOption 3 - Native installer:\x1b[0m');
-        console.error('  \x1b[90mmacOS/Linux:\x1b[0m  \x1b[36mcurl -fsSL https://claude.ai/install.sh | bash\x1b[0m');
-        console.error('  \x1b[90mPowerShell:\x1b[0m   \x1b[36mirm https://claude.ai/install.ps1 | iex\x1b[0m');
-        console.error('  \x1b[90mWindows CMD:\x1b[0m  \x1b[36mcurl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd\x1b[0m\n');
-        console.error('\x1b[90mNote: If multiple installations exist, npm takes priority.\x1b[0m\n');
+        console.error('  \x1b[36mbrew install --cask claude-code\x1b[0m\n');
+        console.error('\x1b[1mOption 3 - npm:\x1b[0m');
+        console.error('  \x1b[36mnpm install -g @anthropic-ai/claude-code\x1b[0m\n');
+        console.error('\x1b[1mOption 4 - WinGet (Windows):\x1b[0m');
+        console.error('  \x1b[36mwinget install Anthropic.ClaudeCode\x1b[0m\n');
         process.exit(1);
     }
 

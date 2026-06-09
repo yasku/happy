@@ -6,12 +6,12 @@
  * Steps:
  *   1. build
  *   2. stop any running daemon (ignores failure)
- *   3. npm link (replaces the globally-installed `happy` with a symlink to this workspace)
+ *   3. pnpm link --global (replaces the globally-installed `happy` with a symlink to this workspace)
  *   4. start the daemon again
  *   5. verify by running `happy --version`
  *
  * Reuses ~/.happy/ — no separate dev home dir. Auth and sessions carry over.
- * To undo: `npm unlink -g happy && npm i -g happy@latest`.
+ * To undo: `pnpm unlink --global happy && pnpm add -g happy@latest`.
  */
 
 const { spawnSync } = require('child_process');
@@ -26,7 +26,7 @@ function run(cmd, args, { allowFailure = false } = {}) {
     const result = spawnSync(cmd, args, {
         cwd: PACKAGE_DIR,
         stdio: 'inherit',
-        // shell: true resolves `.cmd` shims on Windows so `pnpm` / `npm` / `happy` are found.
+        // shell: true resolves `.cmd` shims on Windows so `pnpm` / `happy` are found.
         shell: IS_WINDOWS,
     });
     if (result.error) {
@@ -44,9 +44,9 @@ function run(cmd, args, { allowFailure = false } = {}) {
 
 run('pnpm', ['run', 'build']);
 run('happy', ['daemon', 'stop'], { allowFailure: true });
-run('npm', ['link']);
+run('pnpm', ['link', '--global']);
 run('happy', ['daemon', 'start']);
 run('happy', ['--version']);
 
 console.log(`\n✓ Installed from ${PACKAGE_DIR}`);
-console.log('  To undo: npm unlink -g happy && npm i -g happy@latest');
+console.log('  To undo: pnpm unlink --global happy && pnpm add -g happy@latest');

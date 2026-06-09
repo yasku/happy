@@ -86,7 +86,7 @@ export async function handleServerCommand(args: string[]): Promise<void> {
         console.error(chalk.gray(`    - installed ${SERVER_PACKAGE_NAME} package`));
         console.error(chalk.gray(`    - legacy bundled binary at ${path.join(__dirname, '..', '..', 'tools', 'server', currentPlatform(), bundledBinaryName())}`));
         console.error(chalk.gray('    - sibling packages/happy-server/sources/standalone.ts in the monorepo'));
-        console.error(chalk.gray(`  For npm installs, run: npm install -g ${SERVER_PACKAGE_NAME}`));
+        console.error(chalk.gray(`  To install, run: pnpm add -g ${SERVER_PACKAGE_NAME}`));
         process.exit(1);
     }
 

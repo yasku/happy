@@ -156,6 +156,11 @@ describe('Claude Version Utils - Cross-Platform Detection', () => {
         const result = detectSourceFromPath('C:/Users/test/.claude/claude.exe');
         expect(result).toBe('native installer');
       });
+
+      it('should detect native installer at documented Windows path (%USERPROFILE%\\.local\\bin)', () => {
+        const result = detectSourceFromPath('C:/Users/test/.local/bin/claude.exe');
+        expect(result).toBe('native installer');
+      });
     });
 
     describe('Edge cases and special characters', () => {

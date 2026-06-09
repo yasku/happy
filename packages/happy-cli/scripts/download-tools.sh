@@ -132,13 +132,15 @@ fetch_rg() {
 	mkdir -p "$tmp/rg-pack-$plat"
 	cp "$found" "$tmp/rg-pack-$plat/$bin"
 
-	# try to get ripgrep.node from npm
+	# try to get ripgrep.node from the npm registry (via curl, no npm required)
 	npkg=$(rgnode_pkg "$plat") || true
 	if test -n "$npkg"; then
 		mkdir -p "$tmp/rgnode-$plat"
-		if npm pack "@anthropic-ai/ripgrep-${npkg}" --pack-destination "$tmp/rgnode-$plat" 2>/dev/null; then
-			tgz=$(ls "$tmp/rgnode-$plat"/*.tgz 2>/dev/null | head -1)
-			if test -n "$tgz"; then
+		tarball_url=$(curl -sf "https://registry.npmjs.org/@anthropic-ai/ripgrep-${npkg}/latest" \
+			| grep -o '"tarball":"[^"]*"' | head -1 | cut -d'"' -f4)
+		if test -n "$tarball_url"; then
+			tgz="$tmp/rgnode-$plat/package.tgz"
+			if curl -sfL "$tarball_url" -o "$tgz" 2>/dev/null; then
 				tar -xzf "$tgz" -C "$tmp/rgnode-$plat"
 				node=$(find "$tmp/rgnode-$plat" -name "ripgrep.node" -type f | head -1)
 				if test -n "$node"; then

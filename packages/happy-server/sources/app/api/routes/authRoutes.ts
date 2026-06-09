@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { type Fastify } from "../types";
+import type {} from "@fastify/rate-limit";
 import * as privacyKit from "privacy-kit";
 import { db } from "@/storage/db";
 import { auth } from "@/app/auth/auth";
@@ -7,6 +8,7 @@ import { log } from "@/utils/log";
 
 export function authRoutes(app: Fastify) {
     app.post('/v1/auth', {
+        config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
         schema: {
             body: z.object({
                 publicKey: z.string(),
@@ -39,6 +41,7 @@ export function authRoutes(app: Fastify) {
     });
 
     app.post('/v1/auth/request', {
+        config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
         schema: {
             body: z.object({
                 publicKey: z.string(),
@@ -167,6 +170,7 @@ export function authRoutes(app: Fastify) {
 
     // Account auth request
     app.post('/v1/auth/account/request', {
+        config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
         schema: {
             body: z.object({
                 publicKey: z.string(),

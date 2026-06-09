@@ -76,3 +76,6 @@ happy-workspaces/
 
 # third party tools
 .supervibe/
+
+# Node.js compile cache
+node-compile-cache/

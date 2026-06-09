@@ -154,7 +154,7 @@ function loadRipgrepNative() {
         console.warn('  • Or download from: https://github.com/BurntSushi/ripgrep/releases');
     } else {
         console.warn('  • macOS/Linux: brew install ripgrep');
-        console.warn('  • npm: npm install -g @silentsilas/ripgrep-bin');
+        console.warn('  • pnpm: pnpm add -g @silentsilas/ripgrep-bin');
     }
     console.warn('');
 
