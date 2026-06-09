@@ -6,7 +6,7 @@ echo
 
 # Build first
 echo "1. Building project..."
-npm run build > /dev/null 2>&1
+pnpm run build > /dev/null 2>&1
 echo "   ✓ Build complete"
 echo
 

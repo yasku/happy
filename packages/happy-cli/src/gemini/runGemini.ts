@@ -1214,7 +1214,7 @@ export async function runGemini(opts: {
             }
             // Check for empty error (command not found)
             else if (Object.keys(error).length === 0) {
-              errorMsg = 'Failed to start Gemini. Is "gemini" CLI installed? Run: npm install -g @google/gemini-cli';
+              errorMsg = 'Failed to start Gemini. Is "gemini" CLI installed? Run: pnpm add -g @google/gemini-cli';
             }
             // Use message from error object
             else if (errObj.message || errorMessage) {
