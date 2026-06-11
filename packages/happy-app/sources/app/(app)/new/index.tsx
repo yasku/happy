@@ -1103,7 +1103,7 @@ function NewSessionScreen() {
                                         onPress={() => togglePicker('path')}
                                     >
                                         <Ionicons name="folder-outline" size={15} color={theme.colors.textSecondary} />
-                                        <Text style={[styles.configLabel, { flex: 1 }]} numberOfLines={1}>
+                                        <Text style={[styles.configLabel, { flex: 1, textAlign: 'right' }]} numberOfLines={1} ellipsizeMode="middle">
                                             {pathName}
                                         </Text>
                                     </Pressable>

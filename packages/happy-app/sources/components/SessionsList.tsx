@@ -436,7 +436,7 @@ const SessionItem = React.memo(({ session, selected, isFirst, isLast, isSingle }
                 {session.path ? (
                     <View style={styles.sessionSubtitleRow}>
                         <Text style={styles.sessionSubtitle} numberOfLines={1} ellipsizeMode="middle">
-                            {session.homeDir && session.path.startsWith(session.homeDir)
+                            {session.homeDir && session.path.startsWith(session.homeDir + '/')
                                 ? '~' + session.path.slice(session.homeDir.length)
                                 : session.path}
                         </Text>

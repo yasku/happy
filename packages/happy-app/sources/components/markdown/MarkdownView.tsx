@@ -8,7 +8,7 @@ import { Text } from '../StyledText';
 import { Typography } from '@/constants/Typography';
 import { SimpleSyntaxHighlighter } from '../SimpleSyntaxHighlighter';
 import { Modal } from '@/modal';
-import { useLocalSetting } from '@/sync/storage';
+import { useLocalSetting, useSession } from '@/sync/storage';
 import { storeTempText } from '@/sync/persistence';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -17,18 +17,21 @@ import { MermaidRenderer } from './MermaidRenderer';
 import { t } from '@/text';
 import { isHttpMarkdownLink } from './linkUtils';
 import { openExternalUrl } from '@/utils/openExternalUrl';
+import { splitSessionFileText } from '@/utils/sessionFileLinks';
 
 // Option type for callback
 export type Option = {
     title: string;
 };
 
-export const MarkdownView = React.memo((props: { 
+export const MarkdownView = React.memo((props: {
     markdown: string;
     onOptionPress?: (option: Option) => void;
     sessionId?: string;
 }) => {
     const blocks = React.useMemo(() => parseMarkdown(props.markdown), [props.markdown]);
+    const session = useSession(props.sessionId ?? '');
+    const sessionRoot = session?.metadata?.path ?? null;
     
     // Backwards compatibility: The original version just returned the view, wrapping the list of blocks.
     // It made each of the individual text elements selectable. When we enable the markdownCopyV2 feature,
@@ -47,6 +50,11 @@ export const MarkdownView = React.memo((props: {
         void openExternalUrl(url);
     }, []);
 
+    const handleFileLinkPress = React.useCallback((absolutePath: string) => {
+        if (!props.sessionId) return;
+        router.push(`/session/${props.sessionId}/file?path=${btoa(absolutePath)}`);
+    }, [props.sessionId, router]);
+
     const handleLongPress = React.useCallback(() => {
         try {
             const textId = storeTempText(props.markdown);
@@ -61,15 +69,15 @@ export const MarkdownView = React.memo((props: {
             <View style={{ width: '100%' }}>
                 {blocks.map((block, index) => {
                     if (block.type === 'text') {
-                        return <RenderTextBlock spans={block.content} key={index} first={index === 0} last={index === blocks.length - 1} selectable={selectable} onLinkPress={handleLinkPress} />;
+                        return <RenderTextBlock spans={block.content} key={index} first={index === 0} last={index === blocks.length - 1} selectable={selectable} onLinkPress={handleLinkPress} onFileLinkPress={props.sessionId ? handleFileLinkPress : undefined} sessionRoot={sessionRoot} />;
                     } else if (block.type === 'header') {
-                        return <RenderHeaderBlock level={block.level} spans={block.content} key={index} first={index === 0} last={index === blocks.length - 1} selectable={selectable} onLinkPress={handleLinkPress} />;
+                        return <RenderHeaderBlock level={block.level} spans={block.content} key={index} first={index === 0} last={index === blocks.length - 1} selectable={selectable} onLinkPress={handleLinkPress} onFileLinkPress={props.sessionId ? handleFileLinkPress : undefined} sessionRoot={sessionRoot} />;
                     } else if (block.type === 'horizontal-rule') {
                         return <View style={style.horizontalRule} key={index} />;
                     } else if (block.type === 'list') {
-                        return <RenderListBlock items={block.items} key={index} first={index === 0} last={index === blocks.length - 1} selectable={selectable} onLinkPress={handleLinkPress} />;
+                        return <RenderListBlock items={block.items} key={index} first={index === 0} last={index === blocks.length - 1} selectable={selectable} onLinkPress={handleLinkPress} onFileLinkPress={props.sessionId ? handleFileLinkPress : undefined} sessionRoot={sessionRoot} />;
                     } else if (block.type === 'numbered-list') {
-                        return <RenderNumberedListBlock items={block.items} key={index} first={index === 0} last={index === blocks.length - 1} selectable={selectable} onLinkPress={handleLinkPress} />;
+                        return <RenderNumberedListBlock items={block.items} key={index} first={index === 0} last={index === blocks.length - 1} selectable={selectable} onLinkPress={handleLinkPress} onFileLinkPress={props.sessionId ? handleFileLinkPress : undefined} sessionRoot={sessionRoot} />;
                     } else if (block.type === 'code-block') {
                         return <RenderCodeBlock content={block.content} language={block.language} key={index} first={index === 0} last={index === blocks.length - 1} selectable={selectable} />;
                     } else if (block.type === 'mermaid') {
@@ -119,42 +127,44 @@ type RenderSpanProps = {
     baseStyle?: any;
     selectable: boolean;
     onLinkPress: (url: string) => void;
+    onFileLinkPress?: (path: string) => void;
+    sessionRoot?: string | null;
 };
 
-function RenderTextBlock(props: { spans: MarkdownSpan[], first: boolean, last: boolean, selectable: boolean, onLinkPress: (url: string) => void }) {
-    return <Text selectable={props.selectable} style={[style.text, props.first && style.first, props.last && style.last]}><RenderSpans spans={props.spans} baseStyle={style.text} selectable={props.selectable} onLinkPress={props.onLinkPress} /></Text>;
+function RenderTextBlock(props: { spans: MarkdownSpan[], first: boolean, last: boolean, selectable: boolean, onLinkPress: (url: string) => void, onFileLinkPress?: (path: string) => void, sessionRoot?: string | null }) {
+    return <Text selectable={props.selectable} style={[style.text, props.first && style.first, props.last && style.last]}><RenderSpans spans={props.spans} baseStyle={style.text} selectable={props.selectable} onLinkPress={props.onLinkPress} onFileLinkPress={props.onFileLinkPress} sessionRoot={props.sessionRoot} /></Text>;
 }
 
-function RenderHeaderBlock(props: { level: 1 | 2 | 3 | 4 | 5 | 6, spans: MarkdownSpan[], first: boolean, last: boolean, selectable: boolean, onLinkPress: (url: string) => void }) {
+function RenderHeaderBlock(props: { level: 1 | 2 | 3 | 4 | 5 | 6, spans: MarkdownSpan[], first: boolean, last: boolean, selectable: boolean, onLinkPress: (url: string) => void, onFileLinkPress?: (path: string) => void, sessionRoot?: string | null }) {
     const s = (style as any)[`header${props.level}`];
     const headerStyle = [style.header, s, props.first && style.first, props.last && style.last];
-    return <Text selectable={props.selectable} style={headerStyle}><RenderSpans spans={props.spans} baseStyle={headerStyle} selectable={props.selectable} onLinkPress={props.onLinkPress} /></Text>;
+    return <Text selectable={props.selectable} style={headerStyle}><RenderSpans spans={props.spans} baseStyle={headerStyle} selectable={props.selectable} onLinkPress={props.onLinkPress} onFileLinkPress={props.onFileLinkPress} sessionRoot={props.sessionRoot} /></Text>;
 }
 
 const BULLETS = ['•', '◦', '▪'] as const;
 
-function RenderListBlock(props: { items: { depth: number, spans: MarkdownSpan[] }[], first: boolean, last: boolean, selectable: boolean, onLinkPress: (url: string) => void }) {
+function RenderListBlock(props: { items: { depth: number, spans: MarkdownSpan[] }[], first: boolean, last: boolean, selectable: boolean, onLinkPress: (url: string) => void, onFileLinkPress?: (path: string) => void, sessionRoot?: string | null }) {
     const listStyle = [style.text, style.list];
     return (
         <View style={{ flexDirection: 'column', marginBottom: 8, gap: 6 }}>
             {props.items.map((item, index) => (
                 <View key={index} style={{ flexDirection: 'row', alignItems: 'flex-start', paddingLeft: item.depth * 16 }}>
                     <Text selectable={false} style={[listStyle, { marginRight: 8, marginTop: 1 }]}>{BULLETS[Math.min(item.depth, BULLETS.length - 1)]}</Text>
-                    <Text selectable={props.selectable} style={[listStyle, { flex: 1 }]}><RenderSpans spans={item.spans} baseStyle={listStyle} selectable={props.selectable} onLinkPress={props.onLinkPress} /></Text>
+                    <Text selectable={props.selectable} style={[listStyle, { flex: 1 }]}><RenderSpans spans={item.spans} baseStyle={listStyle} selectable={props.selectable} onLinkPress={props.onLinkPress} onFileLinkPress={props.onFileLinkPress} sessionRoot={props.sessionRoot} /></Text>
                 </View>
             ))}
         </View>
     );
 }
 
-function RenderNumberedListBlock(props: { items: { number: number, depth: number, spans: MarkdownSpan[] }[], first: boolean, last: boolean, selectable: boolean, onLinkPress: (url: string) => void }) {
+function RenderNumberedListBlock(props: { items: { number: number, depth: number, spans: MarkdownSpan[] }[], first: boolean, last: boolean, selectable: boolean, onLinkPress: (url: string) => void, onFileLinkPress?: (path: string) => void, sessionRoot?: string | null }) {
     const listStyle = [style.text, style.list];
     return (
         <View style={{ flexDirection: 'column', marginBottom: 8, gap: 6 }}>
             {props.items.map((item, index) => (
                 <View key={index} style={{ flexDirection: 'row', alignItems: 'flex-start', paddingLeft: item.depth * 16 }}>
                     <Text selectable={false} style={[listStyle, { marginRight: 8, marginTop: 1 }]}>{item.number}.</Text>
-                    <Text selectable={props.selectable} style={[listStyle, { flex: 1 }]}><RenderSpans spans={item.spans} baseStyle={listStyle} selectable={props.selectable} onLinkPress={props.onLinkPress} /></Text>
+                    <Text selectable={props.selectable} style={[listStyle, { flex: 1 }]}><RenderSpans spans={item.spans} baseStyle={listStyle} selectable={props.selectable} onLinkPress={props.onLinkPress} onFileLinkPress={props.onFileLinkPress} sessionRoot={props.sessionRoot} /></Text>
                 </View>
             ))}
         </View>
@@ -277,6 +287,27 @@ function RenderSpans(props: RenderSpanProps) {
                             : undefined}
                     >
                         {span.text}
+                    </Text>
+                );
+            } else if (props.onFileLinkPress && props.sessionRoot) {
+                const segments = splitSessionFileText(span.text, props.sessionRoot);
+                const spanStyle = [props.baseStyle, span.styles.map(s => style[s])];
+                return (
+                    <Text key={index} selectable={props.selectable} style={spanStyle}>
+                        {segments.map((seg, si) =>
+                            seg.link ? (
+                                <Text
+                                    key={si}
+                                    selectable={false}
+                                    style={[spanStyle, style.fileLink]}
+                                    onPress={() => props.onFileLinkPress!(seg.link!.absolutePath)}
+                                >
+                                    {seg.text}
+                                </Text>
+                            ) : (
+                                <Text key={si} selectable={props.selectable} style={spanStyle}>{seg.text}</Text>
+                            )
+                        )}
                     </Text>
                 );
             } else {
@@ -414,6 +445,12 @@ const style = StyleSheet.create((theme) => ({
         color: theme.colors.text,
         fontWeight: '400',
         textDecorationLine: 'underline',
+        cursor: 'pointer',
+    },
+    fileLink: {
+        color: theme.colors.text,
+        textDecorationLine: 'underline',
+        textDecorationStyle: 'dotted',
         cursor: 'pointer',
     },
 
