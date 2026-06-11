@@ -60,6 +60,7 @@ export const MetadataSchema = z.object({
      */
     parentSessionId: z.string().optional(),
     forkedFromMessageId: z.string().optional(),
+    worktreePath: z.string().nullish(), // Worktree directory when session runs in a git worktree
 });
 
 export type Metadata = z.infer<typeof MetadataSchema>;

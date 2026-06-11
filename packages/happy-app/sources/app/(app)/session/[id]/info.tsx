@@ -418,6 +418,14 @@ function SessionInfoContent({ session }: { session: Session }) {
                             icon={<Ionicons name="folder-outline" size={29} color="#5856D6" />}
                             showChevron={false}
                         />
+                        {session.metadata.worktreePath && (
+                            <Item
+                                title={t('sessionInfo.worktreePath')}
+                                subtitle={formatPathRelativeToHome(session.metadata.worktreePath, session.metadata.homeDir)}
+                                icon={<Ionicons name="git-branch-outline" size={29} color="#5856D6" />}
+                                showChevron={false}
+                            />
+                        )}
                         {session.metadata.version && (
                             <Item
                                 title={t('sessionInfo.cliVersion')}

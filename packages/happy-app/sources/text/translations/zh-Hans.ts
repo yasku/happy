@@ -375,6 +375,7 @@ export const zhHans: TranslationStructure = {
         metadata: '元数据',
         host: '主机',
         path: '路径',
+        worktreePath: '工作树',
         operatingSystem: '操作系统',
         processId: '进程 ID',
         happyHome: 'Happy 主目录',

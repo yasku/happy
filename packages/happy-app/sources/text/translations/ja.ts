@@ -375,6 +375,7 @@ export const ja: TranslationStructure = {
         metadata: 'メタデータ',
         host: 'ホスト',
         path: 'パス',
+        worktreePath: 'ワークツリー',
         operatingSystem: 'オペレーティングシステム',
         processId: 'プロセスID',
         happyHome: 'Happy Home',

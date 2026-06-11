@@ -332,6 +332,7 @@ export const ru: TranslationStructure = {
         metadata: 'Метаданные',
         host: 'Хост',
         path: 'Путь',
+        worktreePath: 'Рабочее дерево',
         operatingSystem: 'Операционная система',
         processId: 'ID процесса',
         happyHome: 'Домашний каталог Happy',

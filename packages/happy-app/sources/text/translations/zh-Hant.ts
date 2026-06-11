@@ -374,6 +374,7 @@ export const zhHant: TranslationStructure = {
         metadata: '中繼資料',
         host: '主機',
         path: '路徑',
+        worktreePath: '工作樹',
         operatingSystem: '作業系統',
         processId: '處理程序 ID',
         happyHome: 'Happy 主目錄',

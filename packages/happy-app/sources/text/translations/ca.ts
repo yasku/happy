@@ -374,6 +374,7 @@ export const ca: TranslationStructure = {
         metadata: 'Metadades',
         host: 'Host',
         path: 'Camí',
+        worktreePath: 'Arbre de treball',
         operatingSystem: 'Sistema operatiu',
         processId: 'ID del procés',
         happyHome: 'Directori de Happy',

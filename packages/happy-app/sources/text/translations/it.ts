@@ -372,6 +372,7 @@ export const it: TranslationStructure = {
         metadata: 'Metadati',
         host: 'Host',
         path: 'Percorso',
+        worktreePath: 'Albero di lavoro',
         operatingSystem: 'Sistema operativo',
         processId: 'ID processo',
         happyHome: 'Happy Home',

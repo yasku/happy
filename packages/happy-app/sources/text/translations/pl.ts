@@ -391,6 +391,7 @@ export const pl: TranslationStructure = {
         metadata: 'Metadane',
         host: 'Host',
         path: 'Ścieżka',
+        worktreePath: 'Drzewo robocze',
         operatingSystem: 'System operacyjny',
         processId: 'ID procesu',
         happyHome: 'Katalog domowy Happy',

@@ -435,12 +435,14 @@ const SessionItem = React.memo(({ session, selected, isFirst, isLast, isSingle }
 
                 {session.path ? (
                     <View style={styles.sessionSubtitleRow}>
-                        <Text style={styles.sessionSubtitle} numberOfLines={1}>
-                            {session.path.split(/[/\\]/).filter(Boolean).pop()}
+                        <Text style={styles.sessionSubtitle} numberOfLines={1} ellipsizeMode="middle">
+                            {session.homeDir && session.path.startsWith(session.homeDir)
+                                ? '~' + session.path.slice(session.homeDir.length)
+                                : session.path}
                         </Text>
                     </View>
                 ) : (
-                    <Text style={styles.sessionSubtitle} numberOfLines={1}>
+                    <Text style={styles.sessionSubtitle} numberOfLines={1} ellipsizeMode="tail">
                         {session.subtitle}
                     </Text>
                 )}

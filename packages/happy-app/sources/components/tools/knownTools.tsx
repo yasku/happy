@@ -29,6 +29,14 @@ function getPatchFiles(input: any): string[] {
     return [];
 }
 
+const exitPlanModeTool = {
+    title: t('tools.names.planProposal'),
+    icon: ICON_EXIT,
+    input: z.object({
+        plan: z.string().describe('The plan you came up with')
+    }).partial().passthrough()
+};
+
 const taskLikeTool = {
     title: (opts: { metadata: Metadata | null, tool: ToolCall }) => {
         if (opts.tool.input && opts.tool.input.description && typeof opts.tool.input.description === 'string') {
@@ -172,20 +180,8 @@ export const knownTools = {
             return t('tools.names.search');
         }
     },
-    'ExitPlanMode': {
-        title: t('tools.names.planProposal'),
-        icon: ICON_EXIT,
-        input: z.object({
-            plan: z.string().describe('The plan you came up with')
-        }).partial().passthrough()
-    },
-    'exit_plan_mode': {
-        title: t('tools.names.planProposal'),
-        icon: ICON_EXIT,
-        input: z.object({
-            plan: z.string().describe('The plan you came up with')
-        }).partial().passthrough()
-    },
+    'ExitPlanMode': exitPlanModeTool,
+    'exit_plan_mode': exitPlanModeTool,
     'Read': {
         title: (opts: { metadata: Metadata | null, tool: ToolCall }) => {
             if (typeof opts.tool.input.file_path === 'string') {

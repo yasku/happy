@@ -388,6 +388,7 @@ export const en = {
         metadata: 'Metadata',
         host: 'Host',
         path: 'Path',
+        worktreePath: 'Worktree',
         operatingSystem: 'Operating System',
         processId: 'Process ID',
         happyHome: 'Happy Home',
