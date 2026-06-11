@@ -566,6 +566,8 @@ export const ru: TranslationStructure = {
             applyChanges: 'Обновить файл',
             viewDiff: 'Текущие изменения файла',
             question: 'Вопрос',
+            taskOutput: 'Вывод задачи',
+            taskStop: 'Задача завершена',
         },
         desc: {
             terminalCmd: ({ cmd }: { cmd: string }) => `Терминал(команда: ${cmd})`,

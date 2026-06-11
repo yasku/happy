@@ -18,6 +18,8 @@ import { AskUserQuestionView } from './AskUserQuestionView';
 import { GeminiEditView } from './GeminiEditView';
 import { GeminiExecuteView } from './GeminiExecuteView';
 import { FileView } from './FileView';
+import { TaskOutputView } from './TaskOutputView';
+import { TaskStopView } from './TaskStopView';
 
 export type ToolViewProps = {
     tool: ToolCall;
@@ -49,6 +51,9 @@ export const toolViewRegistry: Record<string, ToolViewComponent> = {
     execute: GeminiExecuteView,
     // File attachment events
     file: FileView,
+    // Agent SDK task tools
+    TaskOutput: TaskOutputView,
+    TaskStop: TaskStopView,
 };
 
 export const toolFullViewRegistry: Record<string, ToolViewComponent> = {
@@ -86,3 +91,5 @@ export { AskUserQuestionView } from './AskUserQuestionView';
 export { GeminiEditView } from './GeminiEditView';
 export { GeminiExecuteView } from './GeminiExecuteView';
 export { FileView } from './FileView';
+export { TaskOutputView } from './TaskOutputView';
+export { TaskStopView } from './TaskStopView';

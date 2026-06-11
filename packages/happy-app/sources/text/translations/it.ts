@@ -555,6 +555,8 @@ export const it: TranslationStructure = {
             applyChanges: 'Aggiorna file',
             viewDiff: 'Modifiche file attuali',
             question: 'Domanda',
+            taskOutput: 'Output del task',
+            taskStop: 'Task completato',
         },
         desc: {
             terminalCmd: ({ cmd }: { cmd: string }) => `Terminale(cmd: ${cmd})`,

@@ -551,6 +551,8 @@ export const zhHans: TranslationStructure = {
             applyChanges: '更新文件',
             viewDiff: '当前文件更改',
             question: '问题',
+            taskOutput: '任务输出',
+            taskStop: '任务完成',
         },
         desc: {
             terminalCmd: ({ cmd }: { cmd: string }) => `终端(命令: ${cmd})`,

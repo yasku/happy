@@ -206,8 +206,15 @@ export function useSessionQuickActions(
         onAfterArchive?.();
     });
 
-    const archiveSession = React.useCallback(() => {
-        performArchive();
+    const archiveSession = React.useCallback(async () => {
+        const confirmed = await Modal.confirm(
+            t('sessionInfo.archiveSession'),
+            t('sessionInfo.archiveSessionConfirm'),
+            { confirmText: t('sessionInfo.archiveSession'), cancelText: t('common.cancel') },
+        );
+        if (confirmed) {
+            performArchive();
+        }
     }, [performArchive]);
 
     const resumeSession = React.useCallback(() => {

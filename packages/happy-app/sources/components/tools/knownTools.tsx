@@ -918,6 +918,26 @@ export const knownTools = {
             return null;
         }
     },
+    // Agent SDK tools for reporting task progress and completion
+    'TaskOutput': {
+        title: t('tools.names.taskOutput'),
+        icon: ICON_TASK,
+        minimal: false,
+        noStatus: true,
+        input: z.object({
+            output: z.string().optional().describe('Intermediate output from an agent task'),
+        }).partial().passthrough(),
+    },
+    'TaskStop': {
+        title: t('tools.names.taskStop'),
+        icon: ICON_TASK,
+        minimal: false,
+        noStatus: true,
+        input: z.object({
+            result: z.string().optional().describe('Final result from an agent task'),
+            reason: z.string().optional().describe('Reason the task was stopped'),
+        }).partial().passthrough(),
+    },
     // Internal Claude Code tool for loading deferred tools - no user-visible output
     'ToolSearch': {
         icon: ICON_SEARCH,

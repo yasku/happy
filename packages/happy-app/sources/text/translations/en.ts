@@ -564,6 +564,8 @@ export const en: TranslationStructure = {
             applyChanges: 'Update file',
             viewDiff: 'Current file changes',
             question: 'Question',
+            taskOutput: 'Task Output',
+            taskStop: 'Task Done',
         },
         askUserQuestion: {
             submit: 'Submit Answer',

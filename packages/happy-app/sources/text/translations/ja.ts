@@ -558,6 +558,8 @@ export const ja: TranslationStructure = {
             applyChanges: 'ファイルを更新',
             viewDiff: '現在のファイル変更',
             question: '質問',
+            taskOutput: 'タスク出力',
+            taskStop: 'タスク完了',
         },
         desc: {
             terminalCmd: ({ cmd }: { cmd: string }) => `ターミナル(cmd: ${cmd})`,
