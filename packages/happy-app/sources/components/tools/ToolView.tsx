@@ -291,8 +291,8 @@ const styles = StyleSheet.create((theme) => ({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 12,
-        backgroundColor: theme.colors.surfaceHighest,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
     },
     headerLeft: {
         flexDirection: 'row',
