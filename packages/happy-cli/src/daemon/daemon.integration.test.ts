@@ -115,7 +115,7 @@ describe('Daemon Integration Tests', { timeout: 180_000 }, () => {
   });
 
   it('should spawn & stop a session via HTTP (not testing RPC route, but similar enough)', async () => {
-    const response = await spawnDaemonSession(integrationEnv.projectPath, 'spawned-test-456');
+    const response = await spawnDaemonSession(integrationEnv.projectPath, 'spawned-test-456') as any;
 
     expect(response).toHaveProperty('success', true);
     expect(response).toHaveProperty('sessionId');
@@ -142,7 +142,7 @@ describe('Daemon Integration Tests', { timeout: 180_000 }, () => {
     }
 
     // Wait for all sessions to be spawned
-    const results = await Promise.all(promises);
+    const results = await Promise.all(promises) as any[];
     const sessionIds = results.map(r => r.sessionId);
 
     const sessions = await listDaemonSessions();
@@ -181,7 +181,7 @@ describe('Daemon Integration Tests', { timeout: 180_000 }, () => {
     await new Promise(resolve => setTimeout(resolve, 5_000));
 
     // Spawn a daemon session
-    const spawnResponse = await spawnDaemonSession(integrationEnv.projectPath, 'daemon-session-bbb');
+    const spawnResponse = await spawnDaemonSession(integrationEnv.projectPath, 'daemon-session-bbb') as any;
 
     // List all sessions
     const sessions = await listDaemonSessions();
@@ -215,7 +215,7 @@ describe('Daemon Integration Tests', { timeout: 180_000 }, () => {
 
   it('should update session metadata when webhook is called', async () => {
     // Spawn a session
-    const spawnResponse = await spawnDaemonSession(integrationEnv.projectPath);
+    const spawnResponse = await spawnDaemonSession(integrationEnv.projectPath) as any;
 
     // Verify webhook was processed (session ID updated)
     const sessions = await listDaemonSessions();
@@ -261,8 +261,8 @@ describe('Daemon Integration Tests', { timeout: 180_000 }, () => {
       );
     }
 
-    const results = await Promise.all(promises);
-    
+    const results = await Promise.all(promises) as any[];
+
     // All should succeed
     results.forEach(res => {
       expect(res.success).toBe(true);

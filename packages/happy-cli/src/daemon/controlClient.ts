@@ -8,24 +8,45 @@ import { clearDaemonState, readDaemonState } from '@/persistence';
 import { Metadata } from '@/api/types';
 import { configuration } from '@/configuration';
 
-async function daemonPost(path: string, body?: any): Promise<{ error?: string } | any> {
+// ────────────────────────────────────────────────────────────────────────────
+// Typed response shapes mirroring the Zod schemas in controlServer.ts
+// ────────────────────────────────────────────────────────────────────────────
+
+type DaemonResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: string };
+
+type SessionStartedResponse = { status: 'ok' };
+
+type ListResponse = {
+  children: Array<{ startedBy: string; happySessionId: string; pid: number }>;
+};
+
+type StopSessionResponse = { success: boolean };
+
+type SpawnSessionResponse =
+  | { success: true; sessionId: string; approvedNewDirectoryCreation: boolean }
+  | { success: false; requiresUserApproval?: boolean; actionRequired?: string; directory?: string }
+  | { success: false; error?: string };
+
+type StopDaemonResponse = { status: string };
+
+// ────────────────────────────────────────────────────────────────────────────
+
+async function daemonPost<T>(path: string, body?: object): Promise<DaemonResult<T>> {
   const state = await readDaemonState();
   if (!state?.httpPort) {
-    const errorMessage = 'No daemon running, no state file found';
-    logger.debug(`[CONTROL CLIENT] ${errorMessage}`);
-    return {
-      error: errorMessage
-    };
+    const error = 'No daemon running, no state file found';
+    logger.debug(`[CONTROL CLIENT] ${error}`);
+    return { ok: false, error };
   }
 
   try {
     process.kill(state.pid, 0);
-  } catch (error) {
-    const errorMessage = 'Daemon is not running, file is stale';
-    logger.debug(`[CONTROL CLIENT] ${errorMessage}`);
-    return {
-      error: errorMessage
-    };
+  } catch {
+    const error = 'Daemon is not running, file is stale';
+    logger.debug(`[CONTROL CLIENT] ${error}`);
+    return { ok: false, error };
   }
 
   try {
@@ -33,26 +54,21 @@ async function daemonPost(path: string, body?: any): Promise<{ error?: string } 
     const response = await fetch(`http://127.0.0.1:${state.httpPort}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body || {}),
-      // Mostly increased for stress test
+      body: JSON.stringify(body ?? {}),
       signal: AbortSignal.timeout(timeout)
     });
-    
+
     if (!response.ok) {
-      const errorMessage = `Request failed: ${path}, HTTP ${response.status}`;
-      logger.debug(`[CONTROL CLIENT] ${errorMessage}`);
-      return {
-        error: errorMessage
-      };
+      const error = `Request failed: ${path}, HTTP ${response.status}`;
+      logger.debug(`[CONTROL CLIENT] ${error}`);
+      return { ok: false, error };
     }
-    
-    return await response.json();
-  } catch (error) {
-    const errorMessage = `Request failed: ${path}, ${error instanceof Error ? error.message : 'Unknown error'}`;
-    logger.debug(`[CONTROL CLIENT] ${errorMessage}`);
-    return {
-      error: errorMessage
-    }
+
+    return { ok: true, data: (await response.json()) as T };
+  } catch (e) {
+    const error = `Request failed: ${path}, ${e instanceof Error ? e.message : 'Unknown error'}`;
+    logger.debug(`[CONTROL CLIENT] ${error}`);
+    return { ok: false, error };
   }
 }
 
@@ -76,37 +92,39 @@ export async function notifyDaemonSessionStarted(
   // app's resume-happy-session RPC fails with "not tracked by this daemon".
   const payload = { sessionId, metadata, encryption };
   const deadline = Date.now() + SESSION_STARTED_RETRY_TIMEOUT_MS;
-  let result: { error?: string } | any;
 
   while (true) {
-    result = await daemonPost('/session-started', payload);
-    if (!result?.error) {
-      return result;
+    const result = await daemonPost<SessionStartedResponse>('/session-started', payload);
+    if (result.ok) {
+      return result.data;
     }
     if (Date.now() >= deadline) {
-      return result;
+      return { error: result.error };
     }
     await new Promise(resolve => setTimeout(resolve, SESSION_STARTED_RETRY_INTERVAL_MS));
   }
 }
 
-export async function listDaemonSessions(): Promise<any[]> {
-  const result = await daemonPost('/list');
-  return result.children || [];
+export async function listDaemonSessions(): Promise<ListResponse['children']> {
+  const result = await daemonPost<ListResponse>('/list');
+  if (!result.ok) return [];
+  return result.data.children;
 }
 
 export async function stopDaemonSession(sessionId: string): Promise<boolean> {
-  const result = await daemonPost('/stop-session', { sessionId });
-  return result.success || false;
+  const result = await daemonPost<StopSessionResponse>('/stop-session', { sessionId });
+  if (!result.ok) return false;
+  return result.data.success;
 }
 
-export async function spawnDaemonSession(directory: string, sessionId?: string): Promise<any> {
-  const result = await daemonPost('/spawn-session', { directory, sessionId });
-  return result;
+export async function spawnDaemonSession(directory: string, sessionId?: string): Promise<SpawnSessionResponse | { error: string }> {
+  const result = await daemonPost<SpawnSessionResponse>('/spawn-session', { directory, sessionId });
+  if (!result.ok) return { error: result.error };
+  return result.data;
 }
 
 export async function stopDaemonHttp(): Promise<void> {
-  await daemonPost('/stop');
+  await daemonPost<StopDaemonResponse>('/stop');
 }
 
 /**
