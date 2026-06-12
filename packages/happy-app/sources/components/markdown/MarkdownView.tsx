@@ -18,6 +18,7 @@ import { t } from '@/text';
 import { isHttpMarkdownLink } from './linkUtils';
 import { openExternalUrl } from '@/utils/openExternalUrl';
 import { splitSessionFileText } from '@/utils/sessionFileLinks';
+import { sessionReadFile } from '@/sync/ops';
 
 // Option type for callback
 export type Option = {
@@ -87,7 +88,7 @@ export const MarkdownView = React.memo((props: {
                     } else if (block.type === 'table') {
                         return <RenderTableBlock headers={block.headers} rows={block.rows} onLinkPress={handleLinkPress} selectable={selectable} key={index} first={index === 0} last={index === blocks.length - 1} />;
                     } else if (block.type === 'image') {
-                        return <RenderImageBlock url={block.url} alt={block.alt} key={index} first={index === 0} last={index === blocks.length - 1} />;
+                        return <RenderImageBlock url={block.url} alt={block.alt} key={index} first={index === 0} last={index === blocks.length - 1} sessionId={props.sessionId} />;
                     } else {
                         return null;
                     }
@@ -217,13 +218,52 @@ function RenderCodeBlock(props: { content: string, language: string | null, firs
     );
 }
 
-function RenderImageBlock(props: { url: string, alt: string, first: boolean, last: boolean }) {
+function isLocalPath(url: string): boolean {
+    return url.startsWith('/') || url.startsWith('~/') || url.startsWith('./') || url.startsWith('../');
+}
+
+function getImageMimeType(url: string): string {
+    const ext = url.split('.').pop()?.toLowerCase();
+    switch (ext) {
+        case 'png': return 'image/png';
+        case 'jpg': case 'jpeg': return 'image/jpeg';
+        case 'gif': return 'image/gif';
+        case 'webp': return 'image/webp';
+        case 'svg': return 'image/svg+xml';
+        default: return 'image/png';
+    }
+}
+
+function RenderImageBlock(props: { url: string, alt: string, first: boolean, last: boolean, sessionId?: string }) {
     const accessibleLabel = props.alt || 'Markdown image';
+    const isLocal = isLocalPath(props.url);
+
+    const [dataUri, setDataUri] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        if (!isLocal || !props.sessionId) return;
+        let cancelled = false;
+        const path = props.url.startsWith('~/')
+            ? props.url  // server will resolve ~ as needed
+            : props.url;
+        sessionReadFile(props.sessionId, path).then((res) => {
+            if (cancelled || !res.success || !res.content) return;
+            const mime = getImageMimeType(props.url);
+            setDataUri(`data:${mime};base64,${res.content}`);
+        });
+        return () => { cancelled = true; };
+    }, [isLocal, props.sessionId, props.url]);
+
+    const resolvedUri = isLocal ? (dataUri ?? null) : props.url;
+
+    if (!resolvedUri) {
+        return null;
+    }
 
     return (
         <View style={[style.imageBlock, props.first && style.first, props.last && style.last]}>
             <Image
-                source={{ uri: props.url }}
+                source={{ uri: resolvedUri }}
                 style={style.image}
                 accessibilityLabel={accessibleLabel}
                 resizeMode="contain"
