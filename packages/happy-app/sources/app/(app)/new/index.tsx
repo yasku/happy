@@ -56,6 +56,8 @@ import {
 } from '@/components/modelModeOptions';
 import { isRunningOnMac } from '@/utils/platform';
 import { resolveAgentDefaultConfig } from '@/sync/agentDefaults';
+import { useImagePicker } from '@/hooks/useImagePicker';
+import { AgentInputAttachmentStrip } from '@/components/AgentInputAttachmentStrip';
 
 // Agent icon assets
 const agentIcons = {
@@ -509,6 +511,8 @@ function NewSessionScreen() {
     const sessions = useSessions();
     const agentInputEnterToSend = useSetting('agentInputEnterToSend');
     const agentDefaultOverrides = useSetting('agentDefaultOverrides');
+    const expImageUpload = useSetting('expImageUpload');
+    const { selectedImages, pickImages, removeImage, clearImages } = useImagePicker();
 
     // Persisted draft state (survives navigation).
     //
@@ -904,10 +908,12 @@ function NewSessionScreen() {
                     const draftState = useNewSessionDraft.getState();
                     const trimmedPrompt = draftState.input.trim();
                     draftState.setInput('');
+                    const attachments = expImageUpload ? [...selectedImages] : undefined;
+                    clearImages();
 
                     // Send initial message if provided
-                    if (trimmedPrompt) {
-                        await sync.sendMessage(result.sessionId, trimmedPrompt, { source: 'new_session' });
+                    if (trimmedPrompt || (attachments && attachments.length > 0)) {
+                        await sync.sendMessage(result.sessionId, trimmedPrompt, { source: 'new_session', attachments });
                     }
 
                     router.back();
@@ -936,8 +942,9 @@ function NewSessionScreen() {
         } finally {
             setIsSpawning(false);
         }
-    }, [selectedMachineId, selectedMachine, selectedPath, selectedAgent, router, navigateToSession, currentPermission.key, currentModelKey, currentEffort?.key, effectiveAgentDefaults.permissionMode, effectiveAgentDefaults.modelMode, effectiveAgentDefaults.effortLevel, worktreeKey]);
+    }, [selectedMachineId, selectedMachine, selectedPath, selectedAgent, router, navigateToSession, currentPermission.key, currentModelKey, currentEffort?.key, effectiveAgentDefaults.permissionMode, effectiveAgentDefaults.modelMode, effectiveAgentDefaults.effortLevel, worktreeKey, expImageUpload, selectedImages, clearImages]);
 
+    const hasImages = expImageUpload && selectedImages.length > 0;
     const canSend = selectedMachineId && selectedMachine && isMachineOnline(selectedMachine) && !isSpawning;
 
     // Handle Enter/Cmd+Enter to send on web
@@ -1226,7 +1233,26 @@ function NewSessionScreen() {
                 <View style={{ maxWidth: layout.maxWidth, width: '100%', alignSelf: 'center', paddingHorizontal: 12, gap: 8 }}>
                     {/* Input box */}
                     <View style={styles.inputBox}>
+                        {hasImages && (
+                            <AgentInputAttachmentStrip
+                                images={selectedImages}
+                                onRemove={removeImage}
+                            />
+                        )}
                         <View style={styles.inputField}>
+                            {expImageUpload && (
+                                <Pressable
+                                    onPress={pickImages}
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    style={(p) => ({ opacity: p.pressed ? 0.6 : 1, paddingLeft: 4, paddingRight: 4 })}
+                                >
+                                    <Ionicons
+                                        name="image-outline"
+                                        size={18}
+                                        color={hasImages ? theme.colors.radio.active : theme.colors.textSecondary}
+                                    />
+                                </Pressable>
+                            )}
                             <View style={{ flex: 1 }}>
                                 <PromptInput
                                     ref={composerInputRef}
